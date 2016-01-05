@@ -62,7 +62,6 @@ export function warmUp(Component, propPaths) {
   const WarmedUpComponent = class extends React.Component {
     render() {
       const stateProps = getPropsFromState(this.context.fridge, propPaths);
-      console.log('stateProps', stateProps)
       return <Component {...this.props} {...stateProps} />;
     }
   }
