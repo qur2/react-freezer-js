@@ -47,7 +47,7 @@ if that's your thing.
 
 ## install
 
-    npm i react-freezer -S
+    npm i react-freezer-js -S
 
 Note that react and freezer-js are peer dependencies. Depending on you
 package manager, you might have to provide them yourself.

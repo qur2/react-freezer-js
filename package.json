@@ -1,17 +1,18 @@
 {
-  "name": "react-freezer",
+  "name": "react-freezer-js",
   "version": "0.1.0",
   "description": "Mandatory context-based helpers for freezer-js and react.",
   "main": "src/index.js",
   "scripts": {
-    "build-umd": "rm -rf build/umd && NODE_ENV=production webpack src/index.js build/umd/react-freezer.js && NODE_ENV=production COMPRESS=1 webpack src/index.js build/umd/react-freezer.min.js && echo \"gzipped, the umd build is `gzip -c build/umd/react-freezer.min.js | wc -c` bytes\"",
-    "build-npm": "rm -rf build/npm && babel -d build/npm/lib ./src && cp README.md build/npm && find -X build/npm/lib -type d -name __tests__ | xargs rm -rf && node -p 'p=require(\"./package-npm\");JSON.stringify(p,null,2)' > build/npm/package.json",
+    "build:umd": "rm -rf build/umd && NODE_ENV=production webpack src/index.js build/umd/react-freezer.js && NODE_ENV=production COMPRESS=1 webpack src/index.js build/umd/react-freezer.min.js && echo \"gzipped, the umd build is `gzip -c build/umd/react-freezer.min.js | wc -c` bytes\"",
+    "build:npm": "rm -rf build/npm && babel -d build/npm/lib ./src && cp README.md build/npm && find -X build/npm/lib -type d -name __tests__ | xargs rm -rf && node -p 'p=require(\"./package-npm\");JSON.stringify(p,null,2)' > build/npm/package.json",
+    "publish": "npm run build:npm && npm publish ./build/npm",
     "test": "tape -r babel-register src/**/*.test.js",
     "test:pretty": "npm run test | faucet"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qur2/react-freezer.git"
+    "url": "git+https://github.com/qur2/react-freezer-js.git"
   },
   "keywords": [
     "react",
