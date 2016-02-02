@@ -53,7 +53,11 @@ function pick(state) {
 const getPropsFromState = (fridge, propPaths) => {
   const state = pick(fridge.get());
   return propPaths.reduce((props, [name, ...p]) => {
-    props[name] = state(p);
+    if (name[0] === '@') {
+      props[name.slice(1)] = (...args) => fridge.trigger(...p.concat(args))
+    } else {
+      props[name] = state(p);
+    }
     return props;
   }, {});
 }

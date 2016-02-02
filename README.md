@@ -18,7 +18,7 @@ import { cool } from 'react-freezer';
 import { fridge } from './state';
 
 function Grandaddy(props) {
-  return <span><compZ /></span>;
+  return <span><SomeComponent /></span>;
 }
 
 export default cool(Grandaddy, fridge);
@@ -33,17 +33,39 @@ out of the fridge:
 import React from 'react';
 import { cool, warmUp } from 'react-freezer';
 
-function compZ({ flag }) {
+function SomeComponent({ flag }) {
   return <span>{flag}</span>;
 }
 
 // state.ui.theFlag will be made available under props.flag
-export default warmUp(compZ, [['flag', 'ui', 'theFlag']]);
+export default warmUp(SomeComponent, [['flag', 'ui', 'theFlag']]);
 ```
 
 Whenever the state changes, the cooled component will be re-rendered,
 triggering a top-down rendering. By leveraging `freezer-js`'s immutability,
 this can be made very efficient.
+
+To get one step closer to a flux-ish flow, action triggers (AKA dispatch) can also be passed in to components. An action trigger is a bound `Freezer.trigger()` call with arbitrary arguments:
+
+```js
+import React from 'react';
+import { warmUp } from 'react-freezer';
+
+function SomeComponent({ flag, dispatchAction }) {
+  // this is calling fridge.trigger('DO_SOMETHING', 'arg0', 'more')
+  dispatchAction('more')
+  return <span>{flag}</span>;
+}
+
+// note the @ that tells the library to bind Freezer.trigger
+export default warmUp(SomeComponent, [
+  ['flag', 'ui', 'theFlag'],
+  ['@dispatchAction', 'DO_SOMETHING', 'arg0']
+]);
+```
+
+For more notes about triggering, see
+https://github.com/arqex/freezer#usage-with-react.
 
 Note that as for any HoC, they can be combined with decorators
 if that's your thing.

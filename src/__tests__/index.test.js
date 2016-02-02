@@ -1,4 +1,5 @@
 import React from 'react';
+import sinon from 'sinon';
 import test from 'blue-tape';
 import Freezer from 'freezer-js';
 import ReactDOMServer from 'react-dom/server';
@@ -9,9 +10,10 @@ function setup() {
   const TestComp = props => {
     const { children } = props;
     if (children) return children;
+    if (props.dispatch) props.dispatch();
     return <i>{JSON.stringify(props).replace(/\"/g, '')}</i>;
   };
-  const fridge = new Freezer({ui: {theFlag: true}});
+  const fridge = new Freezer({ui: {theFlag: true}}, {mutable: true});
   return {
     TestComp, fridge
   };
@@ -57,5 +59,25 @@ test('Rendered warmed up component', t => {
   }
   const rndrd = renderStuff();
   t.equal(rndrd, '<i>{a:some,flag:true}</i>', 'gets fresh props from the fridge');
+  t.end();
+});
+
+test('Warmed up component', t => {
+  const { fridge, TestComp } = setup();
+  const spy = sinon.spy();
+  fridge.on('SOME_ACTION', spy);
+  const WarmedUpComp = warmUp(TestComp, [
+    ['flag', 'ui', 'theFlag'],
+    ['@dispatch', 'SOME_ACTION', 'two', 'args'],
+  ]);
+  const CooledApp = cool(TestComp, fridge);
+  const renderStuff = () => {
+    return ReactDOMServer.renderToStaticMarkup(
+      <CooledApp><WarmedUpComp a="some" /></CooledApp>
+    );
+  }
+  const rndrd = renderStuff();
+  t.true(spy.calledWith('two', 'args'), 'can use bound trigger from the fridge');
+  t.true(spy.calledOnce);
   t.end();
 });
