@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import test from 'blue-tape';
 import Freezer from 'freezer-js';
 import ReactDOMServer from 'react-dom/server';
-import cool, { warmUp, isFridge } from '../';
+import { cool, warmUp, isFridge } from '../';
 
 
 function setup() {
@@ -18,13 +18,6 @@ function setup() {
     TestComp, fridge
   };
 }
-
-test('isFridge', t => {
-  const { fridge } = setup();
-  t.true(isFridge(fridge), 'recognizes a freezer object');
-  t.false(isFridge({}), 'rejects a plain object');
-  t.end();
-});
 
 test('Cooled component', t => {
   const { fridge, TestComp } = setup();
