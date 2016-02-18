@@ -91,10 +91,10 @@ test('Bound actions in parallel', t => {
 test('Bound actions in sequence', t => {
   const { fridge, TestComp } = setup()
   const WarmedUpComp = warmUp(TestComp, [
-    ['action2', serial([
-      ([arg0, arg1, state]) => {
-        t.deepEqual([arg0, arg1], ['argh', 'castle'])
-        return { [arg1]: arg0 }
+    ['action2', (a, b, state) => serial([
+      (args) => {
+        t.deepEqual([a, b], ['argh', 'castle'])
+        return { [b]: a }
       },
       (delta) => {
         t.deepEqual(delta, {castle: 'argh'})

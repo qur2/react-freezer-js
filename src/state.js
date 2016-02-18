@@ -14,7 +14,11 @@ export function isObject (value) {
 // It handles promises as well.
 export function morph (fridge, fn) {
   // compute the new state (could be just some parts)
-  const delta = fn.call(fridge, fridge.get())
+  let delta = fn.call(fridge, fridge.get())
+  // this gives a chance to run an embedded function that needs its closure
+  if (typeof delta === 'function') {
+    delta = delta.call(fridge, fridge.get())
+  }
   // if the delta is a promise, an async flow is implied, wait
   // for the fullfilment to compute the state
   if (delta instanceof Promise) {
@@ -38,7 +42,7 @@ export function morph (fridge, fn) {
 // Note that `commit` is used for side-effect.
 // @see `commit`
 export function serial (promFns) {
-  return function (...args) {
+  return function (state) {
     let shouldCommit = true
     // pre-process the callbacks to get the correct context and avoid
     // unnecessary `then()`
@@ -52,7 +56,7 @@ export function serial (promFns) {
     })
     const p = boundPromFns.reduce(function (delta, promFn) {
       return delta.then(promFn)
-    }, Promise.resolve(args))
+    }, Promise.resolve(state))
     return shouldCommit ? p.then(boundCommit) : p.then(() => {})
   }
 }
