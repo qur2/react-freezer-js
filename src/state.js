@@ -1,19 +1,18 @@
-import React from 'react'
 import Freezer from 'freezer-js'
 
-export function isFridge(fridge) {
+export function isFridge (fridge) {
   return fridge instanceof Freezer
 }
 
-export function isObject(value) {
+export function isObject (value) {
   // http://jsperf.com/isobject4
-  return value !== null && typeof value === 'object';
+  return value !== null && typeof value === 'object'
 }
 
 // Applies a function to the current state to generate a delta and commits
 // the delta (i.e. modifies the state) if it is not `undefined`.
 // It handles promises as well.
-export function morph(fridge, fn) {
+export function morph (fridge, fn) {
   // compute the new state (could be just some parts)
   const delta = fn.call(fridge, fridge.get())
   // if the delta is a promise, an async flow is implied, wait
@@ -22,7 +21,7 @@ export function morph(fridge, fn) {
     return delta.then(d => {
       // if (typeof d === 'function') return morph(fridge, d)
       if (typeof d !== 'undefined') return commit(fridge, d)
-    })//.catch(err => { throw new Error(err) })
+    })// .catch(err => { throw new Error(err) })
   } else if (typeof delta !== 'undefined') {
     return commit(fridge, delta)
   }
@@ -38,7 +37,7 @@ export function morph(fridge, fn) {
 // functions: serial([f, commit, g, h, commit]) ~= (f∘commit∘g∘h∘commit)(state)
 // Note that `commit` is used for side-effect.
 // @see `commit`
-export function serial(promFns) {
+export function serial (promFns) {
   return function (...args) {
     let shouldCommit = true
     // pre-process the callbacks to get the correct context and avoid
@@ -62,7 +61,7 @@ export function serial(promFns) {
 // at the same time, in parallel. The results will be merged together and
 // committed to the state.
 // Note that in this context manually controlling `commit` does not make sense.
-export function parallel(promFns) {
+export function parallel (promFns) {
   return function (...args) {
     return Promise.all(promFns.map(f => f(...args))).then(deltas => {
       return Object.assign.apply(Object, [{}].concat(deltas))
@@ -74,7 +73,7 @@ export function parallel(promFns) {
 // so that it can easily be tapped into a promise chain.
 // check freezer-js documentation for more about update:
 // @see https://github.com/arqex/freezer#update-methods
-export function commit(fridge, delta) {
+export function commit (fridge, delta) {
   if (!isFridge(fridge)) {
     throw new Error('commit() was applied on a non-freezer instance')
   }

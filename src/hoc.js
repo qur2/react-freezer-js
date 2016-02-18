@@ -1,20 +1,21 @@
 import React from 'react'
 import Freezer from 'freezer-js'
-import { morph, commit, isFridge } from './state'
+import { morph, isFridge } from './state'
 
-function getComponentName(Component) {
+function getComponentName (Component) {
   return Component.name ||
     Component.displayName ||
     'Component'
 }
 
-export function cool(Component, fridge) {
-  if (!fridge instanceof Freezer)
+export function cool (Component, fridge) {
+  if (!fridge instanceof Freezer) {
     throw new Error(`That's not a suitable fridge: ${fridge}`)
+  }
 
   const CooledComponent = class extends React.Component {
     // Handling child context
-    getChildContext() {
+    getChildContext () {
       return {
         fridge: fridge,
         dispatch: (...args) => fridge.trigger(...args),
@@ -22,11 +23,11 @@ export function cool(Component, fridge) {
     }
 
     // Render shim
-    render() {
+    render () {
       return <Component {...this.props} />
     }
 
-    componentDidMount() {
+    componentDidMount () {
       // Here the magic happens. Everytime that the
       // state is updated the app will re-render.
       // A real data driven app.
@@ -44,8 +45,8 @@ export function cool(Component, fridge) {
   return CooledComponent
 }
 
-function pick(state) {
-  return function fridgePicker(path) {
+function pick (state) {
+  return function fridgePicker (path) {
     let v = state
     for (let p of path) v = v[p]
     return v
@@ -68,9 +69,9 @@ const getPropsFromState = (fridge, propPaths) => {
   }, {})
 }
 
-export function warmUp(Component, propPaths) {
+export function warmUp (Component, propPaths) {
   const WarmedUpComponent = class extends React.Component {
-    render() {
+    render () {
       const stateProps = getPropsFromState(this.context.fridge, propPaths)
       return <Component {...this.props} {...stateProps} />
     }
