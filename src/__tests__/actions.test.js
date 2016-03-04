@@ -3,7 +3,7 @@ import sinon from 'sinon'
 import test from 'blue-tape'
 import Freezer from 'freezer-js'
 import ReactDOMServer from 'react-dom/server'
-import { cool, warmUp, parallel, serial } from '../'
+import { cool, warmUp } from '../'
 
 function setup () {
   const TestComp = props => {
@@ -32,16 +32,19 @@ test('Bound actions', t => {
     )
   }
   renderStuff()
-  t.true(spy.calledWith({ui: {theFlag: true}}), 'receive the current state')
   t.true(spy.calledOnce)
+  const actionArg = spy.lastCall.args[0]
+  t.true(actionArg.hasOwnProperty('state'))
+  t.true(actionArg.hasOwnProperty('commit'))
+  t.deepEqual(actionArg.state, {ui: {theFlag: true}}, 'receive the current state')
   t.end()
 })
 
-test('Bound actions', t => {
+test('Bound actions with extra params', t => {
   const { fridge, TestComp } = setup()
   const WarmedUpComp = warmUp(TestComp, [
-    ['action2', (arg0, arg1, state) => {
-      return { newKey: arg0 + arg1 }
+    ['action2', (arg0, arg1, {state, commit}) => {
+      commit({ newKey: arg0 + arg1 })
     }],
   ])
   const CooledApp = cool(TestComp, fridge)
@@ -53,70 +56,4 @@ test('Bound actions', t => {
   renderStuff()
   t.deepEqual(fridge.get(), {ui: {theFlag: true}, newKey: 'arghcastle'}, 'may modify the state')
   t.end()
-})
-
-test('Bound actions in parallel', t => {
-  const { fridge, TestComp } = setup()
-  const WarmedUpComp = warmUp(TestComp, [
-    ['action2', parallel([
-      (arg0, arg1, state) => {
-        t.deepEqual([arg0, arg1], ['argh', 'castle'])
-        return { [arg1]: arg0 }
-      },
-      (arg0, arg1, state) => {
-        t.deepEqual([arg0, arg1], ['argh', 'castle'])
-        return { hard: 'code' }
-      },
-    ])],
-  ])
-  const CooledApp = cool(TestComp, fridge)
-  const renderStuff = () => {
-    return ReactDOMServer.renderToStaticMarkup(
-      <CooledApp><WarmedUpComp/></CooledApp>
-    )
-  }
-  renderStuff()
-  // using setTimeout is a bit shitty but the promise is returned
-  // when the action is fired and is out of test scope
-  setTimeout(() => {
-    t.deepEqual(fridge.get(), {
-      ui: {theFlag: true},
-      castle: 'argh',
-      hard: 'code',
-    }, 'all gets the params')
-    t.end()
-  }, 500)
-})
-
-test('Bound actions in sequence', t => {
-  const { fridge, TestComp } = setup()
-  const WarmedUpComp = warmUp(TestComp, [
-    ['action2', (a, b, state) => serial([
-      (args) => {
-        t.deepEqual([a, b], ['argh', 'castle'])
-        return { [b]: a }
-      },
-      (delta) => {
-        t.deepEqual(delta, {castle: 'argh'})
-        return Object.assign({ hard: 'code' }, delta)
-      },
-    ])],
-  ])
-  const CooledApp = cool(TestComp, fridge)
-  const renderStuff = () => {
-    return ReactDOMServer.renderToStaticMarkup(
-      <CooledApp><WarmedUpComp/></CooledApp>
-    )
-  }
-  renderStuff()
-  // using setTimeout is a bit shitty but the promise is returned
-  // when the action is fired and is out of test scope
-  setTimeout(() => {
-    t.deepEqual(fridge.get(), {
-      ui: {theFlag: true},
-      castle: 'argh',
-      hard: 'code',
-    }, 'are seeded with all params')
-    t.end()
-  }, 500)
 })

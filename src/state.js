@@ -13,64 +13,11 @@ export function isObject (value) {
 // the delta (i.e. modifies the state) if it is not `undefined`.
 // It handles promises as well.
 export function morph (fridge, fn) {
-  // compute the new state (could be just some parts)
-  let delta = fn.call(fridge, fridge.get())
-  // this gives a chance to run an embedded function that needs its closure
-  if (typeof delta === 'function') {
-    delta = delta.call(fridge, fridge.get())
-  }
-  // if the delta is a promise, an async flow is implied, wait
-  // for the fullfilment to compute the state
-  if (delta instanceof Promise) {
-    return delta.then(d => {
-      // if (typeof d === 'function') return morph(fridge, d)
-      if (typeof d !== 'undefined') return commit(fridge, d)
-    })// .catch(err => { throw new Error(err) })
-  } else if (typeof delta !== 'undefined') {
-    return commit(fridge, delta)
-  }
-}
-
-// Given an array of functions, it builds a new function that will apply them
-// serially (in cascade). It is more or less equivalent to a async function
-// composition: serial([f, g, h]) ~= (f∘g∘h)(state)
-// It is possible to manually decide to commit the intermediary result to the
-// state by simply using the `commit` function in the chain. In this case,
-// the final result will be `undefined` to avoid an auto-commit. If a final
-// commit is still needed, just add `commit` at the very end of the array of
-// functions: serial([f, commit, g, h, commit]) ~= (f∘commit∘g∘h∘commit)(state)
-// Note that `commit` is used for side-effect.
-// @see `commit`
-export function serial (promFns) {
-  return function (state) {
-    let shouldCommit = true
-    // pre-process the callbacks to get the correct context and avoid
-    // unnecessary `then()`
-    const boundCommit = commit.bind(null, this)
-    const boundPromFns = promFns.map(f => {
-      if (f === commit) {
-        shouldCommit = false
-        return boundCommit
-      }
-      return f
-    })
-    const p = boundPromFns.reduce(function (delta, promFn) {
-      return delta.then(promFn)
-    }, Promise.resolve(state))
-    return shouldCommit ? p.then(boundCommit) : p.then(() => {})
-  }
-}
-
-// Given an array of functions, it builds a new function that will execute them
-// at the same time, in parallel. The results will be merged together and
-// committed to the state.
-// Note that in this context manually controlling `commit` does not make sense.
-export function parallel (promFns) {
-  return function (...args) {
-    return Promise.all(promFns.map(f => f(...args))).then(deltas => {
-      return Object.assign.apply(Object, [{}].concat(deltas))
-    })
-  }
+  // inject the state and the commit function
+  fn.call(fridge, {
+    state: fridge.get(),
+    commit: delta => commit(fridge, delta),
+  })
 }
 
 // Apply the delta to the state (side-effect) and returns the delta,
