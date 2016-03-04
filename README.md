@@ -71,29 +71,25 @@ Note that as for any HoC, they can be combined with decorators
 if that's your thing.
 
 
-## Redux-like feature
+## Actions and state updates
 
-### Actions and state updates
+Since v2.0.0, there is a simple opinionated way of handling state updates. The concept
+is inspired/borrowed from redux-like libraries. An actions is an opportunity
+to update the state (and therefore trigger a re-render).
 
-Since v1.0.0, a more opiniated way of handling actions is provided. The concept
-is inspired/borrowed from redux-like libraries. An actions is a mean to run
-a reducer function on the state to generate a new updated state.
-
-In the context of
-using freezer-js, an action generates a partial state that is merged back into
-the state. In order to do that, the actual action will be run by a controller
-function and it will handle the state behind the scene:
+To make it convenient to work with `freezer-js`, an action is a function that receives a `commit` function
+in order to update the state:
 
 ```js
 import React from 'react';
 import { warmUp } from 'react-freezer';
 
-function SomeComponent({ flag, fireAction }) {
+function SomeComponent({ fireAction }) {
   return <button onClick={() => fireAction('more')}>click</button>;
 }
 
 export default warmUp(SomeComponent, [
-  ['fireAction', arg0 => ({ aFlag: arg0 })]
+  ['fireAction', (arg0, {commit}) => commit({ aFlag: arg0 })]
 ]);
 // after the action has run, the fridge looks like:
 // {
@@ -103,19 +99,19 @@ export default warmUp(SomeComponent, [
 // }
 ```
 
-In case the action needs to know about the current state, it is provided when
-invoked:
+In case the action needs to know about the current state, it is also provided
+when invoked:
 
 ```js
 import React from 'react';
 import { warmUp } from 'react-freezer';
 
-function SomeComponent({ flag, fireAction }) {
+function SomeComponent({ fireAction }) {
   return <button onClick={() => fireAction('mutation')}>click</button>;
 }
 
 export default warmUp(SomeComponent, [
-  ['fireAction', (str, state) => Object.assign({}, state, {some: state.some + ' - ' + str})]
+  ['fireAction', (str, {state, commit}) => commit(Object.assign({}, state, {some: state.some + ' - ' + str}))]
 ]);
 // after the action has run, the fridge looks like:
 // {
@@ -125,63 +121,33 @@ export default warmUp(SomeComponent, [
 // }
 ```
 
-### Compound actions
 
-Sometimes, it is desirable to compose some actions together. Say you have
-2 actions, such as remotely fetch a JSON config file (async) and navigate to a
-different URL, and you want to execute them in order (i.e. you want to wait
-for the fetch to successfully finish before triggering the URL change because you *really* need that config :).
+## Compound actions
 
-The naive approach is to build a 3rd action that combines both. However, this
-will increase the quantity of bookkeeping and promote bad ideas such as copy/pasting
-blocks of code.
-To help with that, some helpers are provided to combine actions easily.
-
-Here is an example with a sequence that needs to run in order:
+Compound utilities were removed in v2.0.0. They bring in a lot of code and complexity to write code that ends up being more verbose
+and error prone than using promises. Instead, actions receive a `commit` function and can implement their flow freely without being limited
+by the features of this library:
 
 ```js
 import React from 'react';
-import { warmUp, serial, commit } from 'react-freezer';
-import { fetchTheConfig, navigateTo } from '../somewhere/actions';
+import { warmUp } from 'react-freezer';
+import { redirectTo } from 'somewhere';
 
-function SomeComponent({ flag, fireAction }) {
-  return <button onClick={() => fireMultipleAction('configA.json', '/settings/')}>click</button>;
+function LoginForm({ loginAndRedirect }) {
+  return <button onClick={() => loginAndRedirect('login', 'pwd', '/user')}>click</button>;
+}
+
+function doLoginAndRedirect (login, pwd, dest, {state, commit}) {
+  api.Authenticate(login, pwd)
+    .then(user => commit({'auth': user}))
+    .then(redirectTo(dest))
+    .catch(/* application error handling */)
 }
 
 export default warmUp(SomeComponent, [
-  ['fireMultipleAction', (conf, dest) => serial([
-    () => fetchTheConfig(conf),
-    commit,
-    () => navigateTo(dest)
-  ])]
+  ['loginAndRedirect', doLoginAndRedirect]
 ]);
-// we managed to reuse the actions with very little declarative glue
 ```
-Here is an example that runs actions in parallel:
-
-```js
-import React from 'react';
-import { warmUp, parallel } from 'react-freezer';
-import { fetchTheUser, fetchTheUserContent } from '../somewhere/actions';
-
-function SomeComponent({ flag, fireAction }) {
-  return <button onClick={() => fireMultipleAction('freakazoid')}>click</button>;
-}
-
-export default warmUp(SomeComponent, [
-  ['fireMultipleAction', (userId) => parallel([
-    () => fetchTheUser(userId),
-    () => fetchTheUserContent(userId)
-  ])]
-]);
-// here as well, we reused the actions with very little declarative glue
-```
-
-## In case you wonder why
-
-There are already plenty of libraries for doing async flow control, that's true. However, the utilities included here provide some small additions to make it more convenient to use along with your freezer state (namely commit and merging of parallel results). So even with using a library such as [Q](https://github.com/kriskowal/q) or [bluebird](https://github.com/petkaantonov/bluebird), there would still be those convenient utilities (they also do context binding for you, did you notice you never need to pass in the state explicitely?).
-
-Another (nicer IMO) approach is to use generator functions along with something like [co](https://github.com/tj/co). However, it's unclear if they are ready for prime time and polyfills are not exactly lightweight (babel-polyfill is at 21.1Kb minified on [cdnjs](https://cdnjs.com/libraries/babel-polyfill)). Since freezer is very light, it feels wrong to provide some helper that take those big file on board.
 
 
 ## Install
@@ -196,8 +162,12 @@ package manager, you might have to provide them yourself.
 
 ## Changelog
 
+### v2.0.0
+Simplify the architecture and inject a `commit` function into the actions.
+
 ### v1.0.0
-Add the reducer-like feature
+Add the reducer-like feature.
+
 
 ## Extra notes
 
