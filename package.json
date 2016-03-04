@@ -9,6 +9,7 @@
     "publish": "npm run build:npm && npm publish ./build/npm",
     "test": "tape -r babel-register src/**/*.test.js",
     "test:pretty": "npm run test | faucet",
+    "test:cover": "babel-node node_modules/isparta/bin/isparta cover --excludes '**/__tests__/**' --report text --report html tape -- src/**/*.test.js",
     "lint": "eslint src *.js"
   },
   "repository": {
@@ -45,6 +46,7 @@
     "eslint": "^1.10.3",
     "eslint-plugin-react": "^3.16.1",
     "faucet": "0.0.1",
+    "isparta": "^4.0.0",
     "react-dom": "^0.14.5",
     "sinon": "^1.17.3",
     "tape": "^4.4.0",
